@@ -1,46 +1,14 @@
-/*
-    Author: @__shivam__
-    singhsanjay20001@gmail.com
-
-                   `\-.   `
-                      \ `.  `
-                       \  \ |
-              __.._    |   \.       S O N - G O K U
-       ..---~~     ~ . |    Y
-         ~-.          `|    |
-            `.               `~~--.
-              \                    ~.
-               \                     \__. . -- -  .
-         .-~~~~~      ,    ,            ~~~~~~---...._
-      .-~___        ,'/  ,'/ ,'\          __...---~~~
-            ~-.    /._\_( ,(/_. 7,-.    ~~---...__
-           _...>-  P""6=`_/"6"~   6)    ___...--~~~
-            ~~--._ \`--') `---'   9'  _..--~~~
-                  ~\ ~~/_  ~~~   /`-.--~~
-                    `.  ---    .'   \_
-                      `. " _.-'     | ~-.,-------._
-                  ..._../~~   ./       .-'    .-~~~-.
-            ,--~~~ ,'...\` _./.----~~.'/    /'       `-
-        _.-(      |\    `/~ _____..-' /    /      _.-~~`.
-       /   |     /. ^---~~~~       ' /    /     ,'  ~.   \
-      (    /    (  .           _ ' /'    /    ,/      \   )
-      (`. |     `\   - - - - ~   /'      (   /         .  |
-       \.\|       \            /'        \  |`.           /
-       /.'\\      `\         /'           ~-\         .  /\
-      /,   (        `\     /'                `.___..-      \
-     | |    \         `\_/'                  //      \.     |
-     | |     |                 _Seal_      /' |       |     |
- */
-
 import java.io.*;
 import java.util.*;
 
-public class Solution
+import javax.swing.text.Segment;
+
+public class Main
 {
     static PrintWriter out = new PrintWriter((System.out));
     static Kioken sc = new Kioken();
 
-    public static void main(String... args)
+    public static void main(String[] args)
     {
       int t = 1;
       t = sc.nextInt();
@@ -53,9 +21,20 @@ public class Solution
 
     public static void solve()
     {
-       int s = sc.nextInt();
-       int a = sc.nextInt();
-       out.println(s+a);
+      int n = sc.nextInt();
+      int[] arr = new int[n];
+      for(int i = 0; i < n; i++) {
+          arr[i] = sc.nextInt();
+      }
+
+      SegmentTree st = new SegmentTree(arr);
+      out.println(st.query(2, 4));
+      st.update(3, 3);
+      out.println(st.query(2, 4));
+    }
+
+    public static long leftShift(long a){
+        return (long)Math.pow(2, a);
     }
 
     public static int lower_bound(ArrayList<Integer> ar, int k)
@@ -97,6 +76,21 @@ public class Solution
             return -1;
         }
         return s;
+    }
+
+    public static int[] z_function(String s) {
+        int n = (int) s.length();
+        int[] z = new int[n];
+        for (int i = 1, l = 0, r = 0; i < n; ++i) {
+            if (i <= r)
+                z[i] = Math.min(r - i + 1, z[i - l]);
+            while (i + z[i] < n && s.charAt(z[i]) == s.charAt(i + z[i]))
+                ++z[i];
+            if (i + z[i] - 1 > r){
+                l = i; r = i + z[i] - 1;
+            }
+        }
+        return z;
     }
 
     static class Kioken
@@ -165,6 +159,143 @@ public class Solution
             }
             st = new StringTokenizer(next);
             return true;
+        }
+    }
+
+
+    static class FenwickTree{
+        int[] arr;
+        int N = 0;
+       
+        FenwickTree(int n, int[] aa) {
+            // index in FT is always 1 more than in array
+            N = n + 1;
+            arr = new int[N];
+            for (int i = 0; i < N; i++) {
+                arr[i] = 0;
+            }
+
+            for (int i = 0; i < aa.length; i++) {
+                update(i, aa[i]);
+            }
+        }
+
+        void update(int idx, int val) {
+            idx++;
+            while (idx < N) {
+                // Add 'val' to current node of BIT Tree
+                arr[idx] += val;
+                // Update index to that of parent
+                // in update View
+                idx += idx & (-idx);
+            }
+        }
+
+        int sum(int index) {
+            int sum = 0; // Initialize result
+
+            // index in BITree[] is 1 more than
+            // the index in arr[]
+            index = index + 1;
+
+            // Traverse ancestors of BITree[index]
+            while (index > 0) {
+                // Add current element of BITree
+                // to sum
+                sum += arr[index];
+
+                // Move index to parent node in
+                // getSum View
+                index -= index & (-index);
+            }
+            return sum;
+        }
+
+        // just like prefix sum
+        int rangeSum(int l, int r){
+            return sum(r) - sum(l-1);
+        }
+
+        // binary lifting
+        // return the lowerBound index for target sum
+        int getLBSumIndex(int sum, int target) {
+            int curr = 0, prevSum = 0;
+            for (int i = N; i >= 0; i--) {
+                if (curr + (1 << i) < N) {
+                    if (arr[curr + (1 << i)] + prevSum < target) {
+                        curr = curr + (1 << i);
+                        prevSum = arr[curr];
+                    }
+                }
+            }
+            return (curr + 1);
+        }
+
+        void print() {
+            out.println(Arrays.toString(arr));
+        }
+    }
+
+    //     int n = nums.length; 
+    //     int x = (int) (Math.ceil(Math.log(n) / Math.log(2)));
+    //     int max_size = 2 * (int) Math.pow(2, x) - 1;
+
+    // Segment tree for finding xor b/w given range
+    static class SegmentTree{
+        int[] arr = new int[4*100000];
+        int[] givenArr;
+        // HINT: This can be updated with ques.
+        int build(int index, int l, int r){
+            if(l == r){
+                return arr[index] = givenArr[l];
+            }
+            int mid = (l+r)/2;
+           return arr[index] = build(2*index+1, l, mid) ^ build(2*index+2, mid+1, r);
+        }
+        SegmentTree(int[] nums) {
+            givenArr = nums;
+            build(0, 0, nums.length - 1);
+        }
+
+        // HINT: This can be updated with ques.
+        void update(int index, int l, int r, int newValue, int i, int prev) {
+            if(index < l || r < index) return;
+
+            arr[i] = arr[i]^prev^newValue;
+            if(l != r) {
+                int mid = (l+r)/2;
+                update(index,l,mid, newValue, 2*i+1, prev);
+                update(index,mid+1, r, newValue, 2*i+2, prev);
+            }
+            return;
+        }
+
+        void update(int index, int val){
+            int prev = givenArr[index];
+            givenArr[index] = val;
+            update(index, 0, givenArr.length-1, val, 0, prev);
+        }
+
+        int query(int left, int right, int l, int r, int i) {
+            // not overlapping
+            if (r < left || l > right) {
+                return 0;
+            }
+
+            // total - overlapping
+            if (l >= left && r <= right) {
+                return arr[i];
+            }
+
+            // partial overlapping
+            int mid = (l + r) / 2;
+            int le = query(left, right, l, mid, 2 * i + 1);
+            int ri = query(left, right, mid + 1, r, 2 * i + 2);
+            return le + ri;
+        }
+        // HINT: for max sum, can be changed according to ques.
+        int query(int l , int r){
+            return query(l, r, 0, givenArr.length-1, 0);
         }
     }
 }
